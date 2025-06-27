@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 describe('Health Check (e2e)', () => {
   let app: INestApplication;
@@ -12,13 +14,48 @@ describe('Health Check (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply the same configuration as main.ts
+    app.setGlobalPrefix('api/v1');
+
+    // Enable CORS
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
+
+    // Configure Swagger for test environment
+    const config = new DocumentBuilder()
+      .setTitle('NestJS Multi-DB Backend')
+      .setDescription('NestJS backend with PostgreSQL, Redis, and MongoDB')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
 
     await app.init();
   });
@@ -53,7 +90,7 @@ describe('Health Check (e2e)', () => {
     const promises = Array(5)
       .fill(null)
       .map(() =>
-        request(app.getHttpServer()).get('/api/v1/api/mock/posts').expect(200),
+        request(app.getHttpServer()).get('/api/v1/mock/posts').expect(200),
       );
 
     const results = await Promise.all(promises);

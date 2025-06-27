@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { CacheModule } from '@nestjs/cache-manager';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -9,13 +8,18 @@ import * as winston from 'winston';
 // Configuration
 import { DatabaseModule } from './config/database.module';
 import { RedisModule } from './config/redis.module';
+import { CacheModule } from './cache/cache.module';
+
+// Tech stack modules
+import { OpenAIModule } from './openai/openai.module';
+import { PocketBaseModule } from './pocketbase/pocketbase.module';
 
 // Feature modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
 import { LogsModule } from './logs/logs.module';
-import { CacheService } from './cache/cache.service';
+import { BookmakersModule } from './bookmakers/bookmakers.module';
 
 @Module({
   imports: [
@@ -49,7 +53,7 @@ import { CacheService } from './cache/cache.service';
             return `${timestamp} [${level}]: ${message}${
               stack ? '\n' + stack : ''
             }`;
-          })
+          }),
         ),
         transports: [
           new winston.transports.Console(),
@@ -62,17 +66,6 @@ import { CacheService } from './cache/cache.service';
       }),
     }),
 
-    // Cache (Redis)
-    CacheModule.registerAsync({
-      useFactory: () => ({
-        store: 'redis',
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        ttl: 300, // 5 minutes default TTL
-      }),
-    }),
-
     // MongoDB for logging
     MongooseModule.forRootAsync({
       useFactory: () => ({
@@ -82,16 +75,21 @@ import { CacheService } from './cache/cache.service';
       }),
     }),
 
-    // Database modules
+    // Database and cache modules
     DatabaseModule,
     RedisModule,
+    CacheModule,
+
+    // Tech stack modules
+    OpenAIModule,
+    PocketBaseModule,
 
     // Feature modules
     AuthModule,
     UsersModule,
     ApiModule,
     LogsModule,
+    BookmakersModule,
   ],
-  providers: [CacheService],
 })
 export class AppModule {}

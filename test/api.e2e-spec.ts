@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/config/prisma.service';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
 describe('API Integration (e2e)', () => {
   let app: INestApplication;
@@ -23,13 +24,20 @@ describe('API Integration (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply the same configuration as main.ts
+    app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
 
@@ -57,7 +65,7 @@ describe('API Integration (e2e)', () => {
   describe('/api/posts (GET)', () => {
     it('should get posts from external API', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/posts')
+        .get('/api/v1/posts')
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -73,7 +81,7 @@ describe('API Integration (e2e)', () => {
 
     it('should support cache parameter', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/posts?cache=false')
+        .get('/api/v1/posts?cache=false')
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -82,14 +90,14 @@ describe('API Integration (e2e)', () => {
     }, 10000);
 
     it('should work without authentication (public route)', () => {
-      return request(app.getHttpServer()).get('/api/v1/api/posts').expect(200);
+      return request(app.getHttpServer()).get('/api/v1/posts').expect(200);
     }, 10000);
   });
 
   describe('/api/posts/:id (GET)', () => {
     it('should get a specific post by id', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/posts/1')
+        .get('/api/v1/posts/1')
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -102,13 +110,13 @@ describe('API Integration (e2e)', () => {
 
     it('should handle non-existent post', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/posts/999999')
+        .get('/api/v1/posts/999999')
         .expect(404);
     }, 10000);
 
     it('should validate post id parameter', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/posts/invalid')
+        .get('/api/v1/posts/invalid')
         .expect(400);
     });
   });
@@ -116,30 +124,30 @@ describe('API Integration (e2e)', () => {
   describe('/api/users (GET)', () => {
     it('should get users from external API with authentication', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/users')
+        .get('/api/v1/users')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
-          expect(res.body.data).toBeInstanceOf(Array);
-          if (res.body.data.length > 0) {
-            expect(res.body.data[0]).toHaveProperty('id');
-            expect(res.body.data[0]).toHaveProperty('name');
-            expect(res.body.data[0]).toHaveProperty('username');
-            expect(res.body.data[0]).toHaveProperty('email');
+          expect(res.body.data).toHaveProperty('data');
+          expect(res.body.data.data).toBeInstanceOf(Array);
+          if (res.body.data.data.length > 0) {
+            expect(res.body.data.data[0]).toHaveProperty('id');
+            expect(res.body.data.data[0]).toHaveProperty('email');
+            expect(res.body.data.data[0]).toHaveProperty('username');
           }
         });
     }, 10000);
 
     it('should fail without authentication', () => {
-      return request(app.getHttpServer()).get('/api/v1/api/users').expect(401);
+      return request(app.getHttpServer()).get('/api/v1/users').expect(401);
     });
   });
 
   describe('/api/mock/posts (GET)', () => {
     it('should get mock posts data', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/mock/posts')
+        .get('/api/v1/mock/posts')
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -153,16 +161,14 @@ describe('API Integration (e2e)', () => {
     });
 
     it('should work without authentication (public route)', () => {
-      return request(app.getHttpServer())
-        .get('/api/v1/api/mock/posts')
-        .expect(200);
+      return request(app.getHttpServer()).get('/api/v1/mock/posts').expect(200);
     });
   });
 
   describe('/api/mock/users (GET)', () => {
     it('should get mock users data', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/api/mock/users')
+        .get('/api/v1/mock/users')
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -176,9 +182,7 @@ describe('API Integration (e2e)', () => {
     });
 
     it('should work without authentication (public route)', () => {
-      return request(app.getHttpServer())
-        .get('/api/v1/api/mock/users')
-        .expect(200);
+      return request(app.getHttpServer()).get('/api/v1/mock/users').expect(200);
     });
   });
 });

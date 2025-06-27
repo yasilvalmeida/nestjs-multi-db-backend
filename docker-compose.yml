@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: nestjs-postgres
+    container_name: nestjs-multi-db-backend-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: nestjs_db
@@ -12,38 +12,75 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - nestjs_multi_db_postgres_data:/var/lib/postgresql/data
+      - nestjs_multi_db_backend_postgres_data:/var/lib/postgresql/data
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
 
   redis:
     image: redis:7-alpine
-    container_name: nestjs-redis
+    container_name: nestjs-multi-db-backend-redis
     restart: unless-stopped
     ports:
       - '6379:6379'
     volumes:
-      - nestjs_multi_db_redis_data:/data
+      - nestjs_multi_db_backend_redis_data:/data
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
 
   mongodb:
     image: mongo:7
-    container_name: nestjs-mongodb
+    container_name: nestjs-multi-db-backend-mongodb
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: nestjs_logs
     ports:
       - '27017:27017'
     volumes:
-      - nestjs_multi_db_mongodb_data:/data/db
+      - nestjs_multi_db_backend_mongodb_data:/data/db
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
+
+  # PocketBase for additional DB & admin UI
+  pocketbase:
+    image: spectado/pocketbase:latest
+    container_name: nestjs-multi-db-backend-pocketbase
+    restart: unless-stopped
+    ports:
+      - '8090:8090'
+    volumes:
+      - nestjs_multi_db_backend_pocketbase_data:/pb_data
+    networks:
+      - nestjs-multi-db-backend-network
+    command: ['pocketbase', 'serve', '--http=0.0.0.0:8090']
+
+  # NestJS Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-multi-db-backend-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/nestjs_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URI=mongodb://mongodb:27017/nestjs_logs
+      - POCKETBASE_URL=http://pocketbase:8090
+    depends_on:
+      - postgres
+      - redis
+      - mongodb
+      - pocketbase
+    networks:
+      - nestjs-multi-db-backend-network
 
   # Optional: Admin interfaces
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: nestjs-pgadmin
+    container_name: nestjs-multi-db-backend-pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@nestjs.com
@@ -51,15 +88,15 @@ services:
     ports:
       - '5050:80'
     volumes:
-      - nestjs_multi_db_pgadmin_data:/var/lib/pgadmin
+      - nestjs_multi_db_backend_pgadmin_data:/var/lib/pgadmin
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
     depends_on:
       - postgres
 
   mongo-express:
     image: mongo-express:latest
-    container_name: nestjs-mongo-express
+    container_name: nestjs-multi-db-backend-mongo-express
     restart: unless-stopped
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
@@ -68,29 +105,30 @@ services:
     ports:
       - '8081:8081'
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
     depends_on:
       - mongodb
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: nestjs-redis-commander
+    container_name: nestjs-multi-db-backend-redis-commander
     restart: unless-stopped
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
       - '8082:8081'
     networks:
-      - nestjs-network
+      - nestjs-multi-db-backend-network
     depends_on:
       - redis
 
 volumes:
-  nestjs_multi_db_postgres_data:
-  nestjs_multi_db_redis_data:
-  nestjs_multi_db_mongodb_data:
-  nestjs_multi_db_pgadmin_data:
+  nestjs_multi_db_backend_postgres_data:
+  nestjs_multi_db_backend_redis_data:
+  nestjs_multi_db_backend_mongodb_data:
+  nestjs_multi_db_backend_pocketbase_data:
+  nestjs_multi_db_backend_pgadmin_data:
 
 networks:
-  nestjs-network:
+  nestjs-multi-db-backend-network:
     driver: bridge

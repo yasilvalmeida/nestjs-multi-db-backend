@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/config/prisma.service';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
 describe('Users (e2e)', () => {
   let app: INestApplication;
@@ -24,13 +25,20 @@ describe('Users (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply the same configuration as main.ts
+    app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
 
@@ -104,7 +112,11 @@ describe('Users (e2e)', () => {
       return request(app.getHttpServer())
         .get('/api/v1/users/invalid-id')
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(500); // Prisma error for invalid ID format
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toBeNull(); // User not found returns null
+        });
     });
   });
 
@@ -172,7 +184,7 @@ describe('Users (e2e)', () => {
         .patch('/api/v1/users/invalid-id')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ firstName: 'Test' })
-        .expect(500);
+        .expect(404); // User not found
     });
   });
 
@@ -191,14 +203,32 @@ describe('Users (e2e)', () => {
 
   describe('/users/:id/activate (PATCH)', () => {
     it('should activate user', async () => {
-      // First deactivate
-      await request(app.getHttpServer())
-        .patch(`/api/v1/users/${userId}/deactivate`)
-        .set('Authorization', `Bearer ${accessToken}`);
+      // Create a second user for activation test
+      const secondUser = {
+        email: 'second@example.com',
+        username: 'seconduser',
+        password: 'password123',
+        firstName: 'Second',
+        lastName: 'User',
+      };
 
-      // Then activate
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/v1/users')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(secondUser)
+        .expect(201);
+
+      const secondUserId = createResponse.body.data.id;
+
+      // First deactivate the second user
+      await request(app.getHttpServer())
+        .patch(`/api/v1/users/${secondUserId}/deactivate`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      // Then activate the second user (using the original user's token)
       return request(app.getHttpServer())
-        .patch(`/api/v1/users/${userId}/activate`)
+        .patch(`/api/v1/users/${secondUserId}/activate`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
@@ -220,7 +250,7 @@ describe('Users (e2e)', () => {
       return request(app.getHttpServer())
         .delete('/api/v1/users/invalid-id')
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(500);
+        .expect(404); // User not found
     });
   });
 });

@@ -22,7 +22,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { ApiService } from './api.service';
 
 @ApiTags('External API')
-@Controller('api')
+@Controller('')
 @UseGuards(ThrottlerGuard)
 export class ApiController {
   constructor(private readonly apiService: ApiService) {}
@@ -39,7 +39,8 @@ export class ApiController {
   @ApiResponse({ status: 200, description: 'Posts retrieved successfully' })
   @ApiResponse({ status: 503, description: 'External API unavailable' })
   async getPosts(
-    @Query('cache', new DefaultValuePipe(true), ParseBoolPipe) useCache: boolean
+    @Query('cache', new DefaultValuePipe(true), ParseBoolPipe)
+    useCache: boolean,
   ) {
     return this.apiService.getPosts(useCache);
   }

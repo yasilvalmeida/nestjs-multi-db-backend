@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/config/prisma.service';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
 describe('Authentication (e2e)', () => {
   let app: INestApplication;
@@ -22,13 +23,20 @@ describe('Authentication (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply the same configuration as main.ts
+    app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
 
