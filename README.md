@@ -104,4 +104,63 @@ npm run start:dev
 | POST   | `/api/v1/auth/login`      | Login & receive JWT        |
 | GET    | `/api/v1/auth/profile`    | Get own profile *(JWT)*    |
 
-### U
+### Users
+
+| Method | Path                      | Description                |
+|--------|---------------------------|----------------------------|
+| GET    | `/api/v1/users`           | List users *(JWT & RBAC)*  |
+| POST   | `/api/v1/users`           | Create user *(Admin)*      |
+| PATCH  | `/api/v1/users/:id`       | Update user *(Admin)*      |
+| DELETE | `/api/v1/users/:id`       | Delete user *(Admin)*      |
+
+*(Demais endpoints no Swagger)*
+
+---
+
+## ⚙️ Environment
+
+```bash
+# Core
+NODE_ENV=development
+PORT=3000
+
+# PostgreSQL
+DATABASE_URL=postgresql://postgres:password@localhost:5432/nestjs_db
+
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/nestjs_logs
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT
+JWT_SECRET=super-secret
+JWT_EXPIRES_IN=24h
+```
+
+---
+
+## 🧪 Running Tests
+
+```bash
+npm run test         # unit
+npm run test:e2e     # end-to-end
+npm run test:cov     # coverage report
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork  
+2. `git checkout -b feature/my-feature`  
+3. Write code + tests  
+4. `npm run test:e2e` (all green)  
+5. PR 🚀
+
+---
+
+## 📄 License
+
+MIT © 2025 Yasser Silveira Vaz d Almeida
