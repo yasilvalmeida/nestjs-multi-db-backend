@@ -82,6 +82,55 @@ export class BookmakersController {
     return await this.bookmakersService.getBookmakerStats();
   }
 
+  @Get('odds/australian')
+  @ApiOperation({ summary: 'Fetch odds from Australian bookmakers only' })
+  @ApiResponse({
+    status: 200,
+    description: 'Australian odds retrieved successfully',
+  })
+  async getAustralianOdds(@Query('sport') sport: string = 'football') {
+    this.logger.log(`Fetching Australian bookmaker odds for ${sport}`);
+    const oddsMap = await this.bookmakersService.getAustralianBookmakerOdds(
+      sport,
+    );
+
+    // Convert Map to object for JSON response
+    const result: Record<string, any> = {};
+    oddsMap.forEach((odds, bookmaker) => {
+      result[bookmaker] = odds;
+    });
+
+    return {
+      timestamp: new Date(),
+      sport,
+      bookmakers: result,
+      summary: {
+        totalBookmakers: oddsMap.size,
+        totalMarkets: Object.values(result).reduce(
+          (sum, odds) => sum + odds.length,
+          0,
+        ),
+      },
+    };
+  }
+
+  @Get('odds/australian/aggregated')
+  @ApiOperation({
+    summary: 'Get aggregated odds from Australian bookmakers with analysis',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Aggregated Australian odds retrieved successfully',
+  })
+  async getAggregatedAustralianOdds(
+    @Query('sport') sport: string = 'football',
+  ) {
+    this.logger.log(
+      `Fetching aggregated Australian bookmaker odds for ${sport}`,
+    );
+    return await this.bookmakersService.getAggregatedAustralianOdds(sport);
+  }
+
   @Get('health')
   @ApiOperation({ summary: 'Check health of bookmaker integrations' })
   @ApiResponse({ status: 200, description: 'Health check completed' })
