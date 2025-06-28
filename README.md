@@ -26,18 +26,15 @@ A production-ready NestJS boilerplate que demonstra **multi-database support** (
 
 ```mermaid
 flowchart LR
+  Client[Frontend / Insomnia / Swagger] --> NestJS
+
   subgraph NestJS API
-    A[Auth Module]
-    U[Users Module]
-    C[Cache (Redis)]
-    PB[PocketBase Sync]
-    L[Logging (Mongo)]
-    A -->|Postgres| PG[(PostgreSQL)]
-    C-.-> NestJS
-    L-.-> NestJS
-    PB-.-> NestJS
+    Auth[Auth Module] --> PG[(PostgreSQL)]
+    Users[Users Module] --> PG
+    Cache[Redis Service] -.-> NestJS
+    PB[PocketBase Sync] -.-> NestJS
+    Logs[MongoDB Logging] -.-> NestJS
   end
-  Client-->NestJS API
 ```
 
 ---
