@@ -1,122 +1,271 @@
-# nestjs-multi-db-backend
+# NestJS Multi-Database Backend
 
-![Build](https://img.shields.io/github/actions/workflow/status/yasilvalmeida/nestjs-multi-db-backend/ci.yml?branch=main)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
-
-A production-ready NestJS boilerplate que demonstra **multi-database support** (PostgreSQL + Redis + MongoDB + PocketBase), autenticação JWT, documentação Swagger e **100 % de cobertura de testes**. Ideal para fintech, analytics ou qualquer plataforma que exija escalabilidade, segurança e observabilidade robusta.
+A production-ready NestJS boilerplate demonstrating multi-database architecture with PostgreSQL, Redis, MongoDB, and PocketBase. Features JWT authentication, RBAC, comprehensive logging, and 100% test coverage. Designed for fintech, analytics platforms, or any application requiring scalable, observable infrastructure.
 
 ---
 
-## 🚀 Highlights
+## 1. Project Overview
 
-| Categoria            | Recursos principais                                                                                             |
-|----------------------|------------------------------------------------------------------------------------------------------------------|
-| **Arquitetura**      | Modular, micro-services friendly, Docker-ready com health checks                                                 |
-| **Databases**        | PostgreSQL (Prisma), Redis (cache/rate-limit), MongoDB (logs), PocketBase (sync em tempo real)                   |
-| **Security**         | JWT Auth, RBAC, proteção rate-limit Redis, validação de entrada                                                  |
-| **Dev Experience**   | Swagger/OpenAPI 3.0, ESLint/Prettier, Husky hooks, request/response logger                                       |
-| **Observability**    | Logs em MongoDB, health endpoints, métricas de performance e graceful shutdown                                   |
-| **Testes**           | E2E + unitários (Jest) – **59 testes, 100 % sucesso**                                                            |
-| **CI/CD**            | GitHub Actions (lint → test → build), Docker Compose para dev/local                                              |
+### The Problem
+
+Modern applications often need multiple database technologies:
+- Relational data requires PostgreSQL for ACID compliance
+- Caching and rate limiting need Redis for speed
+- Logging and analytics benefit from MongoDB's flexibility
+- Real-time sync may require specialized solutions like PocketBase
+
+Setting up this multi-database architecture with proper authentication, testing, and observability is complex and time-consuming.
+
+### The Solution
+
+This boilerplate provides a fully configured NestJS backend with four database integrations, JWT authentication, role-based access control, and production-ready observability. Everything is containerized with Docker Compose for easy local development and deployment.
+
+### Why It Matters
+
+- **Multi-database ready**: PostgreSQL, Redis, MongoDB, PocketBase all configured
+- **100% test coverage**: 59 tests across 6 suites, all passing
+- **Production patterns**: Rate limiting, logging, health checks, graceful shutdown
+- **Developer experience**: Swagger docs, admin UIs, hot reloading
+- **Security**: JWT auth, RBAC, input validation
 
 ---
 
-## 🖼️ Arquitetura de Alto Nível
+## 2. Real-World Use Cases
 
-```mermaid
-flowchart LR
-  Client[Frontend / Insomnia / Swagger] --> NestJS
+| Industry | Application |
+|----------|-------------|
+| **Fintech** | Transaction processing (PostgreSQL) with real-time cache (Redis) and audit logs (MongoDB) |
+| **Analytics Platforms** | Structured data + flexible event logging + real-time sync |
+| **E-Commerce** | User data + session caching + activity tracking |
+| **Healthcare** | Patient records + cache layer + compliance logging |
+| **SaaS Products** | Multi-tenant data + rate limiting + usage analytics |
+| **IoT Platforms** | Device registry + real-time state + time-series logs |
 
-  subgraph NestJS API
-    Auth[Auth Module] --> PG[(PostgreSQL)]
-    Users[Users Module] --> PG
-    Cache[Redis Service] -.-> NestJS
-    PB[PocketBase Sync] -.-> NestJS
-    Logs[MongoDB Logging] -.-> NestJS
-  end
+---
+
+## 3. Core Features
+
+| Feature | Business Value |
+|---------|----------------|
+| **Multi-Database Architecture** | Right database for each use case—no compromises |
+| **JWT Authentication** | Secure, stateless authentication with refresh tokens |
+| **Role-Based Access Control** | Admin and user roles with permission enforcement |
+| **Redis Rate Limiting** | Protect APIs from abuse, control costs |
+| **MongoDB Logging** | Flexible, queryable application logs |
+| **PocketBase Sync** | Real-time data synchronization option |
+| **100% Test Coverage** | Confidence in code quality and reliability |
+| **Docker Ready** | Consistent environments from dev to production |
+
+---
+
+## 4. High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      NestJS Application                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
+│  │ Auth Module  │    │ Users Module │    │External APIs │       │
+│  │              │    │              │    │              │       │
+│  │ • JWT Auth   │    │ • CRUD Ops   │    │ • Caching    │       │
+│  │ • Refresh    │    │ • RBAC       │    │ • Rate Limit │       │
+│  │ • Register   │    │ • Activation │    │              │       │
+│  └──────────────┘    └──────────────┘    └──────────────┘       │
+│           │                   │                   │              │
+│           └───────────────────┼───────────────────┘              │
+│                               │                                  │
+└───────────────────────────────┼──────────────────────────────────┘
+                                │
+    ┌───────────────────────────┼───────────────────────────┐
+    │                           │                           │
+┌───▼───┐   ┌───────┐   ┌───────▼───────┐   ┌──────────────┐
+│Postgre│   │ Redis │   │   MongoDB     │   │  PocketBase  │
+│  SQL  │   │       │   │               │   │              │
+│       │   │       │   │               │   │              │
+│Users  │   │Cache  │   │Logs           │   │Real-time     │
+│Data   │   │Rate   │   │Events         │   │Sync          │
+│       │   │Limit  │   │               │   │              │
+└───────┘   └───────┘   └───────────────┘   └──────────────┘
 ```
 
 ---
 
-## 📈 Test Coverage
+## 5. Tech Stack
 
-```
-✓ Test Suites: 6 passed (100 %)
-✓ Tests:       59 passed (100 %)
-```
-
-### Suites
-
-- Auth (12)
-- External API & caching (14)
-- User CRUD & activation (19)
-- Logging (3)
-- Health & docs (7)
-- Bootstrap (4)
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Framework** | NestJS 10 | Modular, scalable Node.js framework |
+| **Language** | TypeScript | Type safety and DX |
+| **Primary DB** | PostgreSQL + Prisma | Relational data with ORM |
+| **Cache** | Redis | Session cache, rate limiting |
+| **Logs** | MongoDB | Flexible application logging |
+| **Real-time** | PocketBase | Optional real-time sync |
+| **Auth** | JWT + Passport | Secure authentication |
+| **Docs** | Swagger/OpenAPI | Interactive API documentation |
+| **Testing** | Jest | Unit and E2E tests |
+| **DevOps** | Docker Compose | Local development environment |
 
 ---
 
-## 🛠️ Quick Start
+## 6. How the System Works
+
+### Authentication Flow
+
+```
+Register/Login → Validate Credentials → Generate JWT → Secure Endpoints
+```
+
+1. **Register**: Create user with hashed password in PostgreSQL
+2. **Login**: Validate credentials, return JWT token
+3. **Request**: Include JWT in Authorization header
+4. **Verify**: Passport validates token, attaches user to request
+5. **Authorize**: RBAC guards check role permissions
+
+### Multi-Database Usage
+
+```
+Request → NestJS Controller → Service Layer → Appropriate Database
+```
+
+| Operation | Database | Reason |
+|-----------|----------|--------|
+| User CRUD | PostgreSQL | ACID compliance, relations |
+| Session Cache | Redis | Speed, TTL support |
+| Request Logs | MongoDB | Flexible schema, analytics |
+| Real-time Sync | PocketBase | WebSocket support |
+
+### Rate Limiting
+
+```
+Request → Redis Check → Allow/Deny → Log Event
+```
+
+---
+
+## 7. Setup & Run
+
+### Prerequisites
+
+- Node.js 18+
+- Docker & Docker Compose
+- npm or yarn
+
+### Quick Start
 
 ```bash
-git clone https://github.com/yasilvalmeida/nestjs-multi-db-backend.git
+# Clone repository
+git clone https://github.com/your-org/nestjs-multi-db-backend.git
 cd nestjs-multi-db-backend
+
+# Install dependencies
 npm install
 
-# Start databases & services
+# Start databases
 docker-compose up -d postgres redis mongodb pocketbase
 
-# Prisma migrations
+# Run Prisma migrations
 npx prisma generate
 npx prisma migrate dev --name init
 
-# Run dev server
+# Start development server
 npm run start:dev
 ```
 
-- App: `http://localhost:3000`
-- Swagger: `http://localhost:3000/docs`
+### Access Points
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **API** | http://localhost:3000 | NestJS application |
+| **Swagger** | http://localhost:3000/docs | API documentation |
+| **pgAdmin** | http://localhost:5050 | PostgreSQL admin |
+| **Redis Commander** | http://localhost:8082 | Redis admin |
+| **Mongo Express** | http://localhost:8081 | MongoDB admin |
+| **PocketBase** | http://localhost:8090/_/ | PocketBase admin |
+
+### Docker Services
+
+| Service | Port | Default Credentials |
+|---------|------|---------------------|
+| PostgreSQL | 5432 | (see .env) |
+| Redis | 6379 | — |
+| MongoDB | 27017 | admin / admin |
+| PocketBase | 8090 | — |
+| pgAdmin | 5050 | admin@nestjs.com / admin |
 
 ---
 
-## 🐳 Docker Services
+## 8. API Reference
 
-| Service      | Port | Admin UI                                    | Default Creds          |
-|--------------|------|---------------------------------------------|------------------------|
-| PostgreSQL   | 5432 | pgAdmin → `http://localhost:5050`           | `admin@nestjs.com` / `admin` |
-| Redis        | 6379 | Redis Commander → `http://localhost:8082`   | –                      |
-| MongoDB      | 27017| Mongo Express → `http://localhost:8081`     | `admin / admin`        |
-| PocketBase   | 8090 | `http://localhost:8090/_/`                  | –                      |
+### Authentication
 
----
-
-## 🔐 Main API Endpoints
-
-### Auth
-
-| Method | Path                      | Description                |
-|--------|---------------------------|----------------------------|
-| POST   | `/api/v1/auth/register`   | Create new user            |
-| POST   | `/api/v1/auth/login`      | Login & receive JWT        |
-| GET    | `/api/v1/auth/profile`    | Get own profile *(JWT)*    |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/auth/register` | Create new user |
+| `POST` | `/api/v1/auth/login` | Login and receive JWT |
+| `GET` | `/api/v1/auth/profile` | Get current user (JWT required) |
 
 ### Users
 
-| Method | Path                      | Description                |
-|--------|---------------------------|----------------------------|
-| GET    | `/api/v1/users`           | List users *(JWT & RBAC)*  |
-| POST   | `/api/v1/users`           | Create user *(Admin)*      |
-| PATCH  | `/api/v1/users/:id`       | Update user *(Admin)*      |
-| DELETE | `/api/v1/users/:id`       | Delete user *(Admin)*      |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/users` | List users (JWT + RBAC) |
+| `POST` | `/api/v1/users` | Create user (Admin) |
+| `PATCH` | `/api/v1/users/:id` | Update user (Admin) |
+| `DELETE` | `/api/v1/users/:id` | Delete user (Admin) |
 
-*(Demais endpoints no Swagger)*
+### Health & Monitoring
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Service health check |
+| `GET` | `/docs` | Swagger documentation |
 
 ---
 
-## ⚙️ Environment
+## 9. Scalability & Production Readiness
 
-```bash
+### Current Architecture Strengths
+
+| Aspect | Implementation |
+|--------|----------------|
+| **Modularity** | NestJS modules enable clean separation |
+| **Database Strategy** | Right database for each use case |
+| **Testing** | 100% coverage with 59 tests |
+| **Observability** | Health checks, structured logging |
+| **Security** | JWT, RBAC, input validation |
+
+### Test Coverage
+
+```
+✓ Test Suites: 6 passed (100%)
+✓ Tests: 59 passed (100%)
+
+Suites:
+- Auth (12 tests)
+- External API & caching (14 tests)
+- User CRUD & activation (19 tests)
+- Logging (3 tests)
+- Health & docs (7 tests)
+- Bootstrap (4 tests)
+```
+
+### Production Enhancements (Recommended)
+
+| Enhancement | Purpose |
+|-------------|---------|
+| **Load Balancer** | Distribute traffic across instances |
+| **Redis Cluster** | High availability for cache |
+| **MongoDB Replica Set** | Redundancy for logs |
+| **Prometheus/Grafana** | Metrics and monitoring |
+| **Sentry** | Error tracking |
+| **CI/CD Pipeline** | Automated testing and deployment |
+
+---
+
+## 10. Environment Configuration
+
+```env
 # Core
 NODE_ENV=development
 PORT=3000
@@ -138,26 +287,53 @@ JWT_EXPIRES_IN=24h
 
 ---
 
-## 🧪 Running Tests
+## Project Structure
 
-```bash
-npm run test         # unit
-npm run test:e2e     # end-to-end
-npm run test:cov     # coverage report
+```
+nestjs-multi-db-backend/
+├── src/
+│   ├── auth/              # Authentication module
+│   ├── users/             # User management module
+│   ├── external-api/      # External API with caching
+│   ├── logging/           # MongoDB logging service
+│   ├── health/            # Health check endpoints
+│   └── main.ts            # Application bootstrap
+├── prisma/
+│   └── schema.prisma      # Database schema
+├── test/
+│   └── *.spec.ts          # Test files
+├── docker-compose.yml     # Development environment
+└── package.json
 ```
 
 ---
 
-## 🤝 Contributing
+## Scripts
 
-1. Fork  
-2. `git checkout -b feature/my-feature`  
-3. Write code + tests  
-4. `npm run test:e2e` (all green)  
-5. PR 🚀
+```bash
+npm run start:dev    # Development with hot reload
+npm run start:prod   # Production mode
+npm run test         # Unit tests
+npm run test:e2e     # End-to-end tests
+npm run test:cov     # Coverage report
+```
 
 ---
 
-## 📄 License
+## Contributing
 
-MIT © 2025 Yasser Silveira Vaz d Almeida
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/my-feature`
+3. Write code and tests
+4. Ensure all tests pass: `npm run test:e2e`
+5. Submit pull request
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+*Enterprise-grade multi-database architecture for modern applications.*
